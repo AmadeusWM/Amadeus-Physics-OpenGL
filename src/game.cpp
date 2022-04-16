@@ -32,36 +32,46 @@ Game::Game(int windowWidth, int windowHeight)
         exit(3);
     }
     glViewport(0, 0, windowWidth, windowHeight);
+    // framebuffersize callback to change the screen width and height
     glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
     glEnable(GL_DEPTH_TEST);
+    // Disable cursor
+    glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     // init shader objects
     m_shader = new Shader{"./shaders/shader.vert", "./shaders/shader.frag"};
     m_shader->use();
+
     // init perspective projection matrix
-    glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)windowWidth/(float)windowHeight, 0.1f, 100.0f);
+    glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)windowWidth / (float)windowHeight, 0.1f, 1000.0f);
     m_shader->setMatrix4fv("projection", proj);
+
+    // init camera for camera view matrix etc.
+    m_camera = new Camera{glm::vec3{0.0f, 0.0f, 50.0f}};
 }
 
-Game::~Game(){
+Game::~Game()
+{
     delete m_shader;
+    delete m_camera;
 }
 
-void Game::renderLoop(){
-    for (int i = -5 ; i < 5; i++){
-        m_cubes.push_back(new ShapeCube(glm::vec3{0.0f,(float)(i*2), 0.0f}));
-    }
+void Game::renderLoop()
+{
+    for (int i = 0; i < 10; i++)
+        m_connectedSprings.push_back(new SpringsConnected{10, glm::vec3{(float)i*10, 0.0f, 0.0f}});
 
-    while(!glfwWindowShouldClose(m_window)){
+    while (!glfwWindowShouldClose(m_window))
+    {
         // input
         processInput();
-        
+
         // rendering commands
-        
-        glClearColor(0.2f, 0.3f, 0.2f, 1.0f); // sets the clear color
+
+        glClearColor(0.2f, 0.3f, 0.2f, 1.0f);               // sets the clear color
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // uses clear color
         // do main functions
         render();
-        
+
         // check and call events and swap the buffers
         glfwSwapBuffers(m_window);
         glfwPollEvents();
@@ -73,23 +83,39 @@ void Game::renderLoop(){
 // ---------------------------------------------------------------------------------------------------------
 void Game::processInput()
 {
-    if(glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    m_shader->use();
+    // set view matrix uniform according to current camera position
+    double xPosPrev = xPosCursor, yPosPrev = yPosCursor;
+    glfwGetCursorPos(m_window, &xPosCursor, &yPosCursor);
+    m_camera->ProcessMouseMovement(xPosCursor - xPosPrev, yPosCursor - yPosPrev);
+    glm::mat4 view = m_camera->GetViewMatrix();
+
+    if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(m_window, true);
+    if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS)
+        m_camera->ProcessKeyboard(Camera_Movement::FORWARD, 0.1);
+    if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS)
+        m_camera->ProcessKeyboard(Camera_Movement::BACKWARD, 0.1);
+    if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS)
+        m_camera->ProcessKeyboard(Camera_Movement::LEFT, 0.1);
+    if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS)
+        m_camera->ProcessKeyboard(Camera_Movement::RIGHT, 0.1);
+    if (glfwGetKey(m_window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        m_camera->ProcessKeyboard(Camera_Movement::UP, 0.1);
+    if (glfwGetKey(m_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+        m_camera->ProcessKeyboard(Camera_Movement::DOWN, 0.1);
+
+    m_shader->setMatrix4fv("view", view); // set the uniform
 }
 /**
  * @brief : Draw every object and determine view matrix
- * 
+ *
  */
-void Game::render(){
-    m_shader->use();
-    
-    glm::mat4 view = glm::mat4(1.0f);
-    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -10.0f)); // reverse direction of where we want to go
-
-    m_shader->setMatrix4fv("view", view);
-
-    for (const auto cube : m_cubes){
-        cube->draw(m_shader);
+void Game::render()
+{
+    for(const auto spring : m_connectedSprings){
+        spring->applyForces();
+        spring->draw(m_shader);
     }
 }
 

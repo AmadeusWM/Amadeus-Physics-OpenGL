@@ -10,15 +10,19 @@
 #include <vector>
 // headerfiles project
 #include "../include/opengl/shader.h"
-#include "../include/shapes/shape_cube.h"
+#include "../include/opengl/camera.h"
+#include "../include/spring_mass/springs_connected.h"
 
 class Game{
     private:
     // member variables
         GLFWwindow* m_window;
         Shader* m_shader;
+        Camera* m_camera;
 
-        std::vector<ShapeCube*> m_cubes;
+        std::vector<SpringsConnected*> m_connectedSprings;
+        
+        double xPosCursor, yPosCursor;
     // functions
         void processInput();
         void render();

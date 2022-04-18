@@ -22,8 +22,8 @@ SpringsConnected::SpringsConnected(int amSprings, glm::vec3 pos)
         float randomLength = ((float)(rand() % 5 + springLength));
         // increment total length and horizontal offset
         totalLength -= randomLength;
-        // horizontalOffset += randomLength;
-        // zOffset += randomLength;
+        horizontalOffset += randomLength;
+        zOffset += randomLength;
         // position of cubes
         glm::vec3 pos{horizontalOffset, totalLength, zOffset};
         // add new spring

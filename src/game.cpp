@@ -57,8 +57,8 @@ Game::~Game()
 
 void Game::renderLoop()
 {
-    for (int i = 0; i < 10; i++)
-        m_connectedSprings.push_back(new SpringsConnected{10, glm::vec3{(float)i*10, 0.0f, 0.0f}});
+    for (int i = 0; i < 1; i++)
+        m_connectedSprings.push_back(new SpringsConnected{10*2, glm::vec3{(float)i*10, 0.0f, 0.0f}});
 
     while (!glfwWindowShouldClose(m_window))
     {
